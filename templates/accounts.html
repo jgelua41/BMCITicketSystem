@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Accounts | BMC Ticketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/accounts/accounts.css') }}">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══════════════════════════════
+       SIDEBAR
+  ══════════════════════════════ -->
+  <aside class="sidebar collapsed" id="sidebar">
+
+    <button class="hamburger" id="toggleBtn" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="logo-section">
+      <div class="logo-icon"><i class="fa-solid fa-ticket"></i></div>
+      <div class="logo-text">
+        <span class="logo-title">BMC</span>
+        <span class="logo-sub">Ticketing</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <span class="nav-label">Navigation</span>
+      <ul>
+        <li>
+          <a href="{{ url_for('admin_dashboard') }}">
+            <span class="nav-icon"><i class="fas fa-house"></i></span>
+            <span class="nav-text">Dashboard</span>
+          </a>
+        </li>
+        <li class="active">
+          <a href="{{ url_for('admin_accounts') }}">
+            <span class="nav-icon"><i class="fas fa-users"></i></span>
+            <span class="nav-text">Accounts</span>
+            <span class="active-dot"></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-chip">
+        <div class="admin-avatar">{{ current_user.username[0]|upper if current_user else 'A' }}</div>
+        <div class="admin-info">
+          <span class="admin-name">{{ current_user.username if current_user else 'Admin' }}</span>
+          <span class="admin-role">Administrator</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <span class="nav-icon"><i class="fas fa-right-from-bracket"></i></span>
+        <span class="nav-text">Logout</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════
+       MAIN
+  ══════════════════════════════ -->
+  <main class="main-content expanded">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title"><i class="fas fa-users"></i> User Accounts</h1>
+        <p class="page-sub">Manage and update registered user accounts</p>
+      </div>
+      <div class="topbar-right">
+        <div class="online-badge">
+          <span class="dot"></span>
+          {{ current_user.username if current_user else 'Admin' }}
+        </div>
+        <button class="icon-btn" onclick="location.reload()" title="Refresh">
+          <i class="fas fa-rotate"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Stat chips -->
+    <div class="stats-row">
+      <div class="stat-chip chip-green">
+        <div class="chip-icon"><i class="fas fa-users"></i></div>
+        <div class="chip-body">
+          <span class="chip-val" id="totalCount">0</span>
+          <span class="chip-lbl">Total Users</span>
+        </div>
+      </div>
+      <div class="stat-chip chip-mustard">
+        <div class="chip-icon"><i class="fas fa-user-shield"></i></div>
+        <div class="chip-body">
+          <span class="chip-val" id="activeCount">0</span>
+          <span class="chip-lbl">Active Roles</span>
+        </div>
+      </div>
+      <div class="stat-chip chip-olive">
+        <div class="chip-icon"><i class="fas fa-building"></i></div>
+        <div class="chip-body">
+          <span class="chip-val" id="deptCount">0</span>
+          <span class="chip-lbl">Departments</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <div class="search-wrap">
+        <i class="fas fa-magnifying-glass search-icon"></i>
+        <input type="text" id="accountSearch" placeholder="Search by name, email, department or role…" class="search-box">
+      </div>
+      <div class="action-right">
+
+        <!-- Role filter dropdown -->
+        <div class="filter-wrap" id="roleFilterWrap">
+          <button class="filter-btn" id="roleFilterBtn" type="button">
+            <i class="fas fa-filter"></i>
+            <span id="roleFilterLabel">Filter</span>
+            <i class="fas fa-chevron-down filter-chevron" id="roleFilterChevron"></i>
+          </button>
+          <div class="filter-menu" id="roleFilterMenu">
+            <div class="filter-item filter-item-active" data-filter="all">
+              <span class="fitem-icon"><i class="fas fa-list"></i></span>
+              <span class="fitem-label">All Roles</span>
+              <i class="fas fa-check fitem-check" id="rcheck-all"></i>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="filter-item" data-filter="user">
+              <span class="fitem-dot fitem-dot-user"></span>
+              <span class="fitem-label">User</span>
+              <i class="fas fa-check fitem-check" id="rcheck-user" style="opacity:0"></i>
+            </div>
+            <div class="filter-item" data-filter="admin">
+              <span class="fitem-dot fitem-dot-admin"></span>
+              <span class="fitem-label">Admin</span>
+              <i class="fas fa-check fitem-check" id="rcheck-admin" style="opacity:0"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    {% if users %}
+    <div class="table-wrap">
+      <table id="accountsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>User</th>
+            <th>Email</th>
+            <th>Department</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          {% if user[1]|lower != 'admin' %}
+          <tr class="user-row"
+              data-id="{{ user[0] }}"
+              data-username="{{ user[1] }}"
+              data-email="{{ user[2] }}"
+              data-department="{{ user[3] }}"
+              data-role="{{ user[5] }}">
+            <td class="row-num">{{ loop.index }}</td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">{{ user[1][0]|upper }}</div>
+                <div class="user-meta">
+                  <span class="user-name">{{ user[1] }}</span>
+                  <span class="user-id">#{{ user[0] }}</span>
+                </div>
+              </div>
+            </td>
+            <td class="email-cell"><i class="fas fa-envelope"></i> {{ user[2] }}</td>
+            <td><span class="dept-tag">{{ user[3] }}</span></td>
+            <td><span class="role-tag role-{{ user[5]|lower }}">
+              <i class="fas {% if user[5]|lower == 'admin' %}fa-shield-halved{% else %}fa-user{% endif %}"></i>
+              {{ user[5] }}
+            </span></td>
+            <td>
+              <div class="tbl-actions">
+                <button class="tbl-btn tbl-edit edit-btn" title="Edit User">
+                  <i class="fas fa-pen-to-square"></i> Edit
+                </button>
+                <button class="tbl-btn tbl-message" title="Send Message"
+                        onclick="openSendMessage('{{ user[0] }}','{{ user[1] }}')">
+                  <i class="fas fa-envelope"></i> Message
+                </button>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="page-btn" onclick="prevPage()"><i class="fas fa-chevron-left"></i> Prev</button>
+      <div class="page-nums" id="pageNums"></div>
+      <button class="page-btn" onclick="nextPage()">Next <i class="fas fa-chevron-right"></i></button>
+      <span class="page-info" id="pageInfo"></span>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-users-slash"></i>
+      <p>No user accounts found.</p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     EDIT USER MODAL  — LANDSCAPE
+══════════════════════════════════════════ -->
+<div id="editModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-avatar" id="modalAvatar">U</div>
+        <div>
+          <h3><i class="fas fa-pen-to-square"></i> Edit User</h3>
+          <p class="modal-sub" id="modalSubLabel">Editing account details</p>
+        </div>
+      </div>
+      <button class="modal-close" id="closeModal"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <form action="{{ url_for('update_user') }}" method="POST" id="editForm">
+        <input type="hidden" name="id" id="editId">
+
+        <!-- LEFT column -->
+        <div class="modal-left">
+          <div class="form-section-title"><i class="fas fa-circle-info"></i> Account Info</div>
+
+          <div class="form-group">
+            <label><i class="fas fa-user"></i> Username</label>
+            <input type="text" name="username" id="editUsername" required placeholder="Enter username">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" id="editEmail" required placeholder="Enter email address">
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-lock"></i> Password <small>(leave blank to keep current)</small></label>
+            <div class="pass-wrap">
+              <input type="password" name="password" id="editPassword" placeholder="New password">
+              <button type="button" class="pass-toggle" onclick="togglePass()">
+                <i class="fas fa-eye" id="passIcon"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT column -->
+        <div class="modal-right">
+          <div class="form-section-title"><i class="fas fa-sliders"></i> Permissions</div>
+
+          <div class="form-group">
+            <label><i class="fas fa-building"></i> Department</label>
+            <select name="department" id="editDepartment" required>
+              <option value="" disabled>Select Department</option>
+              {% for dept in departments %}
+                <option value="{{ dept }}">{{ dept }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Role selector cards -->
+          <div class="form-group">
+            <label><i class="fas fa-shield-halved"></i> Role</label>
+            <input type="hidden" name="role" id="editRole" value="user">
+            <div class="role-cards">
+              <div class="role-card rc-user" data-role="user">
+                <span class="rc-icon"><i class="fas fa-user"></i></span>
+                <div class="rc-text">
+                  <span class="rc-label">User</span>
+                  <span class="rc-desc">Standard access</span>
+                </div>
+                <span class="rc-radio"></span>
+              </div>
+              <div class="role-card rc-admin" data-role="admin">
+                <span class="rc-icon"><i class="fas fa-shield-halved"></i></span>
+                <div class="rc-text">
+                  <span class="rc-label">Admin</span>
+                  <span class="rc-desc">Full access</span>
+                </div>
+                <span class="rc-radio"></span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" onclick="document.getElementById('editForm').submit()">
+        <i class="fas fa-floppy-disk"></i> Save Changes
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     SEND MESSAGE MODAL
+══════════════════════════════════════════ -->
+<div id="sendMessageModal" class="modal-overlay">
+  <div class="modal-box modal-box-sm">
+    <div class="modal-header">
+      <div class="modal-header-left">
+        <div class="modal-avatar modal-avatar-msg" id="msgModalAvatar">U</div>
+        <div>
+          <h3><i class="fas fa-paper-plane"></i> Send Message</h3>
+          <p class="modal-sub" id="msgModalSubLabel">Sending to user</p>
+        </div>
+      </div>
+      <button class="modal-close" id="closeMsgModal"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body modal-body-single">
+      <form id="messageForm">
+        <input type="hidden" name="receiver_id" id="receiverId">
+        <div class="form-group">
+          <label><i class="fas fa-tag"></i> Subject</label>
+          <input type="text" name="subject" id="messageSubject" placeholder="Enter subject" required>
+        </div>
+        <div class="form-group">
+          <label><i class="fas fa-align-left"></i> Message</label>
+          <textarea name="message" id="messageContent" rows="5" placeholder="Type your message here…" required></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelMsgBtn">Cancel</button>
+      <button class="btn btn-primary" id="sendMsgBtn">
+        <i class="fas fa-paper-plane"></i> Send Message
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+
+/* ── SIDEBAR + HAMBURGER ANIMATION ── */
+const toggleBtn   = document.getElementById("toggleBtn");
+const sidebar     = document.getElementById("sidebar");
+const mainContent = document.querySelector(".main-content");
+
+toggleBtn.addEventListener("click", () => {
+  const isCollapsed = sidebar.classList.toggle("collapsed");
+  mainContent.classList.toggle("expanded", isCollapsed);
+  const icon = toggleBtn.querySelector("i");
+  icon.style.transition = "opacity 0.2s ease";
+  icon.style.opacity = "0";
+  setTimeout(() => {
+    icon.className = isCollapsed ? "fas fa-bars" : "fas fa-angles-left";
+    icon.style.opacity = "1";
+  }, 150);
+});
+
+/* ── STATS ── */
+window.addEventListener("DOMContentLoaded", () => {
+  const rows = document.querySelectorAll("#accountsTable tbody tr");
+  const depts = new Set(), roles = new Set();
+  rows.forEach(r => {
+    if (r.dataset.department) depts.add(r.dataset.department);
+    if (r.dataset.role)       roles.add(r.dataset.role);
+  });
+  animateCount("totalCount", rows.length);
+  animateCount("activeCount", roles.size);
+  animateCount("deptCount",   depts.size);
+});
+function animateCount(id, target) {
+  const el = document.getElementById(id); if (!el) return;
+  let n = 0; const step = Math.max(1, Math.ceil(target / 40));
+  const t = setInterval(() => { n = Math.min(n + step, target); el.textContent = n; if (n >= target) clearInterval(t); }, 25);
+}
+
+/* ── ROLE CARD SELECTOR ── */
+function setRoleCard(value) {
+  document.getElementById("editRole").value = value;
+  document.querySelectorAll(".role-card").forEach(c =>
+    c.classList.toggle("rc-selected", c.dataset.role === value)
+  );
+}
+document.querySelectorAll(".role-card").forEach(c =>
+  c.addEventListener("click", () => setRoleCard(c.dataset.role))
+);
+
+/* ── EDIT MODAL ── */
+const modal = document.getElementById("editModal");
+
+document.querySelectorAll(".edit-btn").forEach(btn => {
+  btn.addEventListener("click", function () {
+    const row = this.closest("tr");
+    const username = row.dataset.username;
+    document.getElementById("editId").value         = row.dataset.id;
+    document.getElementById("editUsername").value   = username;
+    document.getElementById("editEmail").value      = row.dataset.email;
+    document.getElementById("editDepartment").value = row.dataset.department;
+    document.getElementById("editPassword").value   = "";
+    setRoleCard(row.dataset.role || "user");
+
+    /* update modal header */
+    document.getElementById("modalAvatar").textContent  = username[0].toUpperCase();
+    document.getElementById("modalSubLabel").textContent = "Editing: " + username;
+
+    modal.classList.add("active");
+  });
+});
+
+function closeEditModal() { modal.classList.remove("active"); }
+document.getElementById("closeModal").onclick = closeEditModal;
+document.getElementById("cancelBtn").onclick  = closeEditModal;
+modal.addEventListener("click", e => { if (e.target === modal) closeEditModal(); });
+
+/* ── PASSWORD TOGGLE ── */
+function togglePass() {
+  const inp = document.getElementById("editPassword");
+  const ico = document.getElementById("passIcon");
+  inp.type = inp.type === "password" ? "text" : "password";
+  ico.className = inp.type === "text" ? "fas fa-eye-slash" : "fas fa-eye";
+}
+
+/* ── ROLE FILTER DROPDOWN ── */
+let activeRoleFilter = "all";
+const roleFilterBtn     = document.getElementById("roleFilterBtn");
+const roleFilterMenu    = document.getElementById("roleFilterMenu");
+const roleFilterChevron = document.getElementById("roleFilterChevron");
+const roleFilterLabel   = document.getElementById("roleFilterLabel");
+
+function openRoleMenu()  { roleFilterMenu.classList.add("open");    roleFilterChevron.style.transform = "rotate(180deg)"; }
+function closeRoleMenu() { roleFilterMenu.classList.remove("open"); roleFilterChevron.style.transform = "rotate(0deg)"; }
+
+roleFilterBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  roleFilterMenu.classList.contains("open") ? closeRoleMenu() : openRoleMenu();
+});
+
+const roleLabels = { all: "Filter", user: "User", admin: "Admin" };
+document.querySelectorAll("#roleFilterMenu .filter-item").forEach(item => {
+  item.addEventListener("click", () => {
+    activeRoleFilter = item.dataset.filter;
+    roleFilterLabel.textContent = roleLabels[activeRoleFilter] || "Filter";
+
+    document.querySelectorAll("#roleFilterMenu .filter-item").forEach(i => i.classList.remove("filter-item-active"));
+    item.classList.add("filter-item-active");
+
+    ["all","user","admin"].forEach(k => {
+      const el = document.getElementById("rcheck-" + k);
+      if (el) el.style.opacity = k === activeRoleFilter ? "1" : "0";
+    });
+
+    roleFilterBtn.className = "filter-btn";
+    if (activeRoleFilter === "user")  roleFilterBtn.classList.add("fb-user");
+    if (activeRoleFilter === "admin") roleFilterBtn.classList.add("fb-admin");
+
+    closeRoleMenu();
+    applyFilters();
+  });
+});
+document.addEventListener("click", e => { if (!e.target.closest("#roleFilterWrap")) closeRoleMenu(); });
+
+/* ── SEARCH + FILTER COMBINED ── */
+const allRows = Array.from(document.querySelectorAll("#accountsTable tbody tr"));
+
+function applyFilters() {
+  const q = document.getElementById("accountSearch").value.toLowerCase().trim();
+  allRows.forEach(r => {
+    const ms = r.innerText.toLowerCase().includes(q);
+    const mf = activeRoleFilter === "all" || (r.dataset.role || "").toLowerCase() === activeRoleFilter;
+    r.dataset.hidden = (ms && mf) ? "" : "true";
+  });
+  showPage(1);
+}
+document.getElementById("accountSearch").addEventListener("keyup", applyFilters);
+
+/* ── PAGINATION ── */
+const rowsPerPage = 10;
+let currentPage   = 1;
+
+function getActive() { return allRows.filter(r => r.dataset.hidden !== "true"); }
+
+function showPage(page) {
+  const active = getActive();
+  const total  = Math.max(1, Math.ceil(active.length / rowsPerPage));
+  currentPage  = Math.min(Math.max(1, page), total);
+  const start  = (currentPage - 1) * rowsPerPage;
+  allRows.forEach(r => (r.style.display = "none"));
+  active.slice(start, start + rowsPerPage).forEach(r => (r.style.display = ""));
+  renderPager(total);
+  const end = Math.min(start + rowsPerPage, active.length);
+  document.getElementById("pageInfo").textContent =
+    active.length ? `Showing ${start+1}–${end} of ${active.length}` : "No results";
+}
+function renderPager(total) {
+  const wrap = document.getElementById("pageNums"); wrap.innerHTML = "";
+  for (let i = 1; i <= total; i++) {
+    const b = document.createElement("button");
+    b.className = "page-num" + (i === currentPage ? " active" : "");
+    b.textContent = i; b.onclick = () => showPage(i); wrap.appendChild(b);
+  }
+}
+function prevPage() { showPage(currentPage - 1); }
+function nextPage() { showPage(currentPage + 1); }
+showPage(1);
+
+/* ── SEND MESSAGE MODAL ── */
+const msgModal = document.getElementById("sendMessageModal");
+
+function openSendMessage(userId, username) {
+  document.getElementById("receiverId").value = userId;
+  document.getElementById("messageForm").reset();
+  document.getElementById("msgModalAvatar").textContent   = username[0].toUpperCase();
+  document.getElementById("msgModalSubLabel").textContent = "Sending to: " + username;
+  msgModal.classList.add("active");
+}
+document.getElementById("closeMsgModal").onclick = () => msgModal.classList.remove("active");
+document.getElementById("cancelMsgBtn").onclick  = () => msgModal.classList.remove("active");
+msgModal.addEventListener("click", e => { if (e.target === msgModal) msgModal.classList.remove("active"); });
+
+document.getElementById("sendMsgBtn").addEventListener("click", function (e) {
+  e.preventDefault();
+  const form     = document.getElementById("messageForm");
+  const formData = new FormData(form);
+  if (!formData.get("subject") || !formData.get("message")) {
+    showToast("Please fill in subject & message.", "error"); return;
+  }
+  fetch("{{ url_for('admin_send_message') }}", { method: "POST", body: formData })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        msgModal.classList.remove("active");
+        form.reset();
+        showToast("Message sent successfully!", "success");
+      } else {
+        showToast("Failed: " + (data.error || "Unknown error"), "error");
+      }
+    })
+    .catch(() => showToast("Error sending message.", "error"));
+});
+
+/* ── TOAST ── */
+const toastEl = document.getElementById("toast");
+function showToast(msg, type = "info") {
+  toastEl.textContent = msg;
+  toastEl.className   = "toast " + type;
+  toastEl.classList.add("show");
+  setTimeout(() => toastEl.classList.remove("show"), 2800);
+}
+</script>
+
+</body>
+</html>

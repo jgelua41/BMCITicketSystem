@@ -1,0 +1,32 @@
+{
+  "count": 3,
+  "newTickets": [
+    {
+      "id": 101,
+      "user": "John Doe",
+      "department": "IT",
+      "subject": "Printer Issue",
+      "description": "Cannot print from PC",
+      "status": "Open",
+      "created": "2026-03-09 08:45:00"
+    },
+    {
+      "id": 102,
+      "user": "Mary Smith",
+      "department": "HR",
+      "subject": "Payroll Error",
+      "description": "Salary not credited",
+      "status": "Pending",
+      "created": "2026-03-09 08:50:00"
+    },
+    {
+      "id": 103,
+      "user": "Alex Johnson",
+      "department": "Finance",
+      "subject": "Budget Approval",
+      "description": "Budget approval pending for Q1",
+      "status": "Resolved",
+      "created": "2026-03-09 09:00:00"
+    }
+  ]
+}

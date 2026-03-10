@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMC Ticketing — Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
+</head>
+<body>
+
+  <!-- Decorative background blobs -->
+  <div class="bg-blob blob-1"></div>
+  <div class="bg-blob blob-2"></div>
+  <div class="bg-blob blob-3"></div>
+
+  <div class="login-wrapper login-wrapper-wide">
+
+    <!-- ── LEFT PANEL ── -->
+    <div class="login-panel panel-left">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-ticket"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">BMC</span>
+          <span class="brand-sub">Ticketing System</span>
+        </div>
+      </div>
+
+      <div class="panel-left-body">
+        <h1 class="panel-headline">Join the team.<br>Submit smarter.</h1>
+        <p class="panel-desc">Create your account to start submitting and tracking support tickets across departments — fast, organised, and hassle-free.</p>
+
+        <div class="feature-list">
+          <div class="feature-item">
+            <span class="feat-icon feat-green"><i class="fas fa-ticket"></i></span>
+            <span>Submit tickets instantly</span>
+          </div>
+          <div class="feature-item">
+            <span class="feat-icon feat-mustard"><i class="fas fa-bell"></i></span>
+            <span>Real-time status updates</span>
+          </div>
+          <div class="feature-item">
+            <span class="feat-icon feat-olive"><i class="fas fa-building"></i></span>
+            <span>Department-level support</span>
+          </div>
+        </div>
+      </div>
+
+      <p class="panel-version">BMCI Ticketing v1.0</p>
+    </div>
+
+    <!-- ── RIGHT PANEL ── -->
+    <div class="login-panel panel-right panel-right-wide">
+
+      <div class="form-card">
+
+        <div class="form-header">
+          <h2 class="form-title">Create account</h2>
+          <p class="form-sub">Fill in your details to get started</p>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">
+              <i class="fas {% if category == 'success' %}fa-circle-check{% elif category == 'danger' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+              <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Register Form -->
+        <form action="{{ url_for('register') }}" method="POST" class="login-form">
+
+          <!-- Row 1: Username + Email -->
+          <div class="form-row-2">
+            <div class="field-group">
+              <label class="field-label"><i class="fas fa-user"></i> Username</label>
+              <div class="field-wrap">
+                <input type="text" name="username" placeholder="Enter username" autocomplete="username" required>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label"><i class="fas fa-envelope"></i> Email</label>
+              <div class="field-wrap">
+                <input type="email" name="email" placeholder="Enter email address" autocomplete="email" required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Department -->
+          <div class="field-group">
+            <label class="field-label"><i class="fas fa-building"></i> Department</label>
+            <div class="field-wrap field-wrap-select">
+              <i class="fas fa-building select-prefix-icon"></i>
+              <select name="department" required>
+                <option value="" disabled selected>Select your department</option>
+                <option value="EMERGENCY">EMERGENCY</option>
+                <option value="OR/DR">OR/DR</option>
+                <option value="ICU">ICU</option>
+                <option value="NICU">NICU</option>
+                <option value="GENERAL NURSING UNIT 4TH FLOOR">GENERAL NURSING UNIT 4TH FLOOR</option>
+                <option value="CREDIT & COLLECTION">CREDIT &amp; COLLECTION</option>
+                <option value="PHARMACY">PHARMACY</option>
+                <option value="LABORATORY">LABORATORY</option>
+                <option value="PULMONARY">PULMONARY</option>
+                <option value="RADIOLOGY">RADIOLOGY</option>
+                <option value="DIETARY">DIETARY</option>
+                <option value="REHAB/ PHYSICAL THERAPY">REHAB / PHYSICAL THERAPY</option>
+                <option value="CARDIOLOGY / HEART STATION">CARDIOLOGY / HEART STATION</option>
+                <option value="HEMODIALYSIS">HEMODIALYSIS</option>
+                <option value="MEDICAL RECORDS">MEDICAL RECORDS</option>
+                <option value="CASHIER">CASHIER</option>
+                <option value="PHILHEALTH">PHILHEALTH</option>
+                <option value="HMO">HMO</option>
+                <option value="BILLING">BILLING</option>
+                <option value="PURCHASING">PURCHASING</option>
+                <option value="MANAGEMENT INFORMATION SYSTEM">MANAGEMENT INFORMATION SYSTEM</option>
+                <option value="INFO/ ADMITTING">INFO / ADMITTING</option>
+                <option value="MARKETING">MARKETING</option>
+                <option value="CENTRAL WAREHOUSE">CENTRAL WAREHOUSE</option>
+                <option value="ADMIN">ADMIN</option>
+                <option value="ACCOUNTING">ACCOUNTING</option>
+                <option value="NURSING SERVICES">NURSING SERVICES</option>
+                <option value="HUMAN RESOURCE">HUMAN RESOURCE</option>
+                <option value="QUALITY MANAGEMENT">QUALITY MANAGEMENT</option>
+                <option value="ADMITTING">ADMITTING</option>
+                <option value="CT-SCAN">CT-SCAN</option>
+                <option value="ULTRASOUND">ULTRASOUND</option>
+                <option value="OBSTETRICS GYNECOLOGY">OBSTETRICS GYNECOLOGY</option>
+                <option value="CHARGE AUDIT SERVICES">CHARGE AUDIT SERVICES</option>
+                <option value="FINANCE">FINANCE</option>
+                <option value="PROPERTY MANAGEMENT OFFICE">PROPERTY MANAGEMENT OFFICE</option>
+                <option value="ENGINEERING">ENGINEERING</option>
+                <option value="LINEN">LINEN</option>
+                <option value="SOCIAL SERVICE">SOCIAL SERVICE</option>
+                <option value="IPCN /OSHN">IPCN / OSHN</option>
+                <option value="OPD CLINICS">OPD CLINICS</option>
+              </select>
+              <i class="fas fa-chevron-down select-arrow"></i>
+            </div>
+          </div>
+
+          <!-- Row 2: Password + Confirm -->
+          <div class="form-row-2">
+            <div class="field-group">
+              <label class="field-label"><i class="fas fa-lock"></i> Password</label>
+              <div class="field-wrap field-wrap-pass">
+                <input type="password" name="password" id="regPassword" placeholder="Create password" required>
+                <button type="button" class="pass-toggle" onclick="togglePass('regPassword','regPassIcon')" tabindex="-1">
+                  <i class="fas fa-eye" id="regPassIcon"></i>
+                </button>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label"><i class="fas fa-lock"></i> Confirm Password</label>
+              <div class="field-wrap field-wrap-pass">
+                <input type="password" name="confirm_password" id="regConfirm" placeholder="Re-enter password" required>
+                <button type="button" class="pass-toggle" onclick="togglePass('regConfirm','regConfirmIcon')" tabindex="-1">
+                  <i class="fas fa-eye" id="regConfirmIcon"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Password strength indicator -->
+          <div class="pass-strength" id="passStrength" style="display:none">
+            <div class="strength-bar">
+              <div class="strength-fill" id="strengthFill"></div>
+            </div>
+            <span class="strength-label" id="strengthLabel">Weak</span>
+          </div>
+
+          <button type="submit" class="btn-login">
+            <i class="fas fa-user-plus"></i>
+            Create Account
+          </button>
+
+        </form>
+
+        <p class="register-link">
+          Already have an account?
+          <a href="{{ url_for('login_page') }}">Login here</a>
+        </p>
+
+      </div>
+    </div>
+
+  </div>
+
+<script>
+/* Password toggle */
+function togglePass(inputId, iconId) {
+  const inp  = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  const show = inp.type === "password";
+  inp.type       = show ? "text" : "password";
+  icon.className = show ? "fas fa-eye-slash" : "fas fa-eye";
+}
+
+/* Password strength meter */
+document.getElementById("regPassword").addEventListener("input", function () {
+  const val = this.value;
+  const bar   = document.getElementById("passStrength");
+  const fill  = document.getElementById("strengthFill");
+  const label = document.getElementById("strengthLabel");
+
+  if (!val) { bar.style.display = "none"; return; }
+  bar.style.display = "flex";
+
+  let score = 0;
+  if (val.length >= 8)              score++;
+  if (/[A-Z]/.test(val))            score++;
+  if (/[0-9]/.test(val))            score++;
+  if (/[^A-Za-z0-9]/.test(val))     score++;
+
+  const levels = [
+    { pct: "25%",  color: "#e05a4a", text: "Weak"      },
+    { pct: "50%",  color: "#c9900a", text: "Fair"      },
+    { pct: "75%",  color: "#5d9950", text: "Good"      },
+    { pct: "100%", color: "#4a7c3f", text: "Strong"    },
+  ];
+  const lv = levels[Math.max(0, score - 1)];
+  fill.style.width      = lv.pct;
+  fill.style.background = lv.color;
+  label.textContent     = lv.text;
+  label.style.color     = lv.color;
+});
+
+/* Auto-dismiss flash */
+document.querySelectorAll(".flash").forEach(el => {
+  setTimeout(() => {
+    el.style.transition = "opacity .4s ease, transform .4s ease";
+    el.style.opacity    = "0";
+    el.style.transform  = "translateY(-6px)";
+    setTimeout(() => el.remove(), 400);
+  }, 4000);
+});
+</script>
+
+</body>
+</html>

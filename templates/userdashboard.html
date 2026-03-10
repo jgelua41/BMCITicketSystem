@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — BMC Ticketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/userdashboard/userdashboard.css') }}">
+</head>
+<body>
+
+<!-- ── FLASH TOAST ── -->
+<div class="flash-toast" id="flashToast">
+  <i class="fa-solid fa-circle-check" id="toastIcon"></i>
+  <span id="toastMsg">Done</span>
+</div>
+
+<div class="layout">
+
+  <!-- ══════════════════════════════════
+       SIDEBAR — starts collapsed
+  ══════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle sidebar">
+      <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
+    </button>
+
+    <div class="logo-section">
+      <div class="logo-icon"><i class="fa-solid fa-ticket"></i></div>
+      <div class="logo-text">
+        <span class="logo-title">BMC Ticketing</span>
+        <span class="logo-sub">Support Portal</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <span class="nav-label">Menu</span>
+      <ul>
+        <li class="active">
+          <a href="{{ url_for('user_dashboard') }}">
+            <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
+            <span class="nav-text">Home</span>
+            <span class="active-dot"></span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('user_history') }}">
+            <div class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span class="nav-text">History</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-chip">
+        <div class="admin-avatar">{{ username[0]|upper }}</div>
+        <div class="admin-info">
+          <span class="admin-name">{{ username }}</span>
+          <span class="admin-role">User</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <div class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+        <span class="nav-text">Logout</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════ -->
+  <div class="main-content" id="mainContent">
+
+    <!-- ── Topbar ── -->
+    <div class="topbar">
+      <div>
+        <p class="page-title">
+          <i class="fa-solid fa-house"></i>
+          Welcome, {{ username }}!
+        </p>
+        <p class="page-sub">Department: <strong>{{ session['department'] }}</strong></p>
+      </div>
+      <div class="topbar-right">
+        <!-- Department badge -->
+        <div class="dept-badge">
+          <i class="fa-solid fa-building"></i>
+          {{ session['department'] }}
+        </div>
+        <!-- Send message button -->
+        <button class="msg-btn" id="openMsgModalBtn">
+          <i class="fa-solid fa-paper-plane"></i>
+          Message Admin
+        </button>
+        <!-- Live clock -->
+        <div class="clock-badge">
+          <i class="fa-regular fa-clock"></i>
+          <span id="liveClock">--:--:-- --</span>
+        </div>
+        <!-- Online dot -->
+        <div class="online-badge">
+          <span class="dot"></span>
+          Online
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stat Cards ── -->
+    <div class="stat-grid">
+
+      <!-- Total tickets -->
+      <div class="stat-card card-dark">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
+          <div>
+            <span class="stat-label">Total Tickets</span>
+            <div class="stat-value">{{ open_tickets + pending_tickets + resolved_tickets }}</div>
+            <div class="stat-note">All submissions</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-ticket stat-bg-icon"></i>
+      </div>
+
+      <!-- Open -->
+      <div class="stat-card card-green-2">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-circle-dot"></i></div>
+          <div>
+            <span class="stat-label">Open</span>
+            <div class="stat-value">{{ open_tickets }}</div>
+            <div class="stat-note">Awaiting response</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-circle-dot stat-bg-icon"></i>
+      </div>
+
+      <!-- Pending -->
+      <div class="stat-card card-mustard">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div>
+            <span class="stat-label">Pending</span>
+            <div class="stat-value">{{ pending_tickets }}</div>
+            <div class="stat-note">In progress</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-hourglass-half stat-bg-icon"></i>
+      </div>
+
+      <!-- Resolved -->
+      <div class="stat-card card-blue">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <span class="stat-label">Resolved</span>
+            <div class="stat-value">{{ resolved_tickets }}</div>
+            <div class="stat-note">Closed &amp; solved</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-circle-check stat-bg-icon"></i>
+      </div>
+
+    </div>
+
+    <!-- ── Top info row: Logo card + Date-Time card ── -->
+    <div class="stat-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 28px;">
+
+      <!-- BMCi Logo card -->
+      <div class="stat-card-logo">
+        <img src="{{ url_for('static', filename='header.png') }}" alt="BMCi Logo">
+      </div>
+
+      <!-- Live date & time card -->
+      <div class="stat-card card-green" style="animation-delay:.28s">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-regular fa-calendar-days"></i></div>
+          <div>
+            <span class="stat-label">Date &amp; Time</span>
+            <div class="stat-time-main" id="cardTime">--:-- --</div>
+            <div class="stat-date-sub" id="cardDate">Loading…</div>
+          </div>
+        </div>
+        <i class="fa-regular fa-clock stat-bg-icon"></i>
+      </div>
+
+    </div>
+
+    <!-- ── Submit Ticket Form ── -->
+    <div class="section-header">
+      <div>
+        <p class="section-title"><i class="fa-solid fa-plus-circle"></i> Submit New Ticket</p>
+        <p class="section-sub">Fill in the details below and we'll route your request to the right team.</p>
+      </div>
+    </div>
+
+    <div class="ticket-box">
+      <div class="ticket-box-header">
+        <h3><i class="fa-solid fa-file-lines"></i> New Support Ticket</h3>
+      </div>
+
+      <div class="ticket-box-body">
+        <form id="ticketForm" action="{{ url_for('submit_ticket') }}" method="POST">
+
+          <div class="form-row">
+            <!-- Department (read-only) -->
+            <div class="form-group">
+              <label><i class="fa-solid fa-building"></i> Department</label>
+              <input type="text" value="{{ session['department'] }}" readonly>
+              <input type="hidden" name="department" value="{{ session['department'] }}">
+            </div>
+
+            <!-- Subject -->
+            <div class="form-group">
+              <label><i class="fa-solid fa-tag"></i> Subject</label>
+              <input type="text" id="subject" name="subject" placeholder="Brief summary of your issue" required>
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-row">
+            <div class="form-group full">
+              <label><i class="fa-solid fa-align-left"></i> Description</label>
+              <textarea id="description" name="description" placeholder="Describe your issue in detail…" rows="5" required></textarea>
+            </div>
+          </div>
+
+          <input type="hidden" name="status" value="Open">
+
+          <button type="submit" class="btn-submit">
+            <i class="fa-solid fa-paper-plane"></i>
+            Submit Ticket
+          </button>
+
+        </form>
+      </div>
+    </div>
+
+  </div><!-- .main-content -->
+</div><!-- .layout -->
+
+<!-- ══════════════════════════════════
+     SEND MESSAGE MODAL
+══════════════════════════════════ -->
+<div class="modal-overlay" id="sendMessageModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3><i class="fa-solid fa-paper-plane"></i> Message Admin</h3>
+      <button class="modal-close" id="closeMsgModal"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <form id="userMessageForm">
+        <input type="hidden" name="receiver_id" value="1">
+        <div class="form-group">
+          <label><i class="fa-solid fa-tag"></i> Subject</label>
+          <input type="text" name="subject" id="msgSubject" required placeholder="Enter subject">
+        </div>
+        <div class="form-group">
+          <label><i class="fa-solid fa-comment-dots"></i> Message</label>
+          <textarea name="message" id="msgContent" required placeholder="Type your message…" rows="5"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelMsgBtn">Cancel</button>
+      <button class="btn btn-primary" id="sendMsgBtn">
+        <i class="fa-solid fa-paper-plane"></i> Send Message
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Jinja flash message modal ── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+    <div id="ticketModal" class="ticket-modal">
+      <div class="modal-content">
+        <i class="fa-solid fa-circle-check" style="margin-right:8px;color:#8dcc7a"></i>
+        {{ message }}
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════
+   1. SIDEBAR — starts collapsed
+      bars = collapsed | angles-left = open
+═══════════════════════════════════════ */
+const sidebar       = document.getElementById('sidebar');
+const mainContent   = document.getElementById('mainContent');
+const hamburgerBtn  = document.getElementById('hamburgerBtn');
+const hamburgerIcon = document.getElementById('hamburgerIcon');
+
+sidebar.classList.add('collapsed');
+mainContent.classList.add('expanded');
+hamburgerIcon.className = 'fa-solid fa-bars';
+
+hamburgerBtn.addEventListener('click', () => {
+  const nowCollapsed = sidebar.classList.toggle('collapsed');
+  mainContent.classList.toggle('expanded', nowCollapsed);
+  hamburgerIcon.className = nowCollapsed
+    ? 'fa-solid fa-bars'
+    : 'fa-solid fa-angles-left';
+});
+
+/* ═══════════════════════════════════════
+   2. LIVE CLOCK — 12-hour with AM/PM
+      Updates topbar badge + stat card
+═══════════════════════════════════════ */
+const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function updateClock() {
+  const now   = new Date();
+  let   hours = now.getHours();
+  const ampm  = hours >= 12 ? 'PM' : 'AM';
+  hours       = hours % 12 || 12;
+  const hh    = String(hours).padStart(2, '0');
+  const mm    = String(now.getMinutes()).padStart(2, '0');
+  const ss    = String(now.getSeconds()).padStart(2, '0');
+  const timeStr = `${hh}:${mm}:${ss} ${ampm}`;
+  const dateStr = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+
+  // Topbar badge
+  const badge = document.getElementById('liveClock');
+  if (badge) badge.textContent = timeStr;
+
+  // Stat card
+  const cardTime = document.getElementById('cardTime');
+  const cardDate = document.getElementById('cardDate');
+  if (cardTime) cardTime.textContent = `${hh}:${mm} ${ampm}`;
+  if (cardDate) cardDate.textContent = dateStr;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ═══════════════════════════════════════
+   3. TOAST
+═══════════════════════════════════════ */
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('flashToast');
+  const icon  = document.getElementById('toastIcon');
+  const text  = document.getElementById('toastMsg');
+  text.textContent  = msg;
+  toast.className   = `flash-toast ${type} show`;
+  icon.className    = type === 'success'
+    ? 'fa-solid fa-circle-check'
+    : 'fa-solid fa-circle-exclamation';
+  setTimeout(() => toast.classList.remove('show'), 3200);
+}
+
+/* ═══════════════════════════════════════
+   4. TICKET FORM — AJAX submit
+═══════════════════════════════════════ */
+document.getElementById('ticketForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  const form = this;
+  const btn  = form.querySelector('.btn-submit');
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+
+  fetch(form.action, { method: 'POST', body: new FormData(form) })
+    .then(() => {
+      showToast('Ticket submitted successfully!', 'success');
+      form.reset();
+    })
+    .catch(() => showToast('Error submitting ticket.', 'error'))
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Ticket';
+    });
+});
+
+/* ═══════════════════════════════════════
+   5. SEND MESSAGE MODAL
+═══════════════════════════════════════ */
+const msgModal    = document.getElementById('sendMessageModal');
+const openMsgBtn  = document.getElementById('openMsgModalBtn');
+const closeMsgBtn = document.getElementById('closeMsgModal');
+const cancelBtn   = document.getElementById('cancelMsgBtn');
+const sendBtn     = document.getElementById('sendMsgBtn');
+
+function openModal()  { msgModal.classList.add('active'); }
+function closeModal() { msgModal.classList.remove('active'); }
+
+openMsgBtn.addEventListener('click', openModal);
+closeMsgBtn.addEventListener('click', closeModal);
+cancelBtn.addEventListener('click', closeModal);
+msgModal.addEventListener('click', e => { if (e.target === msgModal) closeModal(); });
+
+sendBtn.addEventListener('click', () => {
+  const form = document.getElementById('userMessageForm');
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+
+  sendBtn.disabled = true;
+  sendBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sending…';
+
+  fetch("{{ url_for('user_send_message') }}", { method: 'POST', body: new FormData(form) })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showToast('Message sent to Admin!', 'success');
+        form.reset();
+        closeModal();
+      } else {
+        showToast('Failed to send message.', 'error');
+      }
+    })
+    .catch(() => showToast('Error sending message.', 'error'))
+    .finally(() => {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Send Message';
+    });
+});
+
+/* ═══════════════════════════════════════
+   6. JINJA FLASH MODAL — auto-dismiss
+═══════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('ticketModal');
+  if (modal) {
+    modal.style.display = 'flex';
+    setTimeout(() => modal.style.display = 'none', 2500);
+  }
+});
+</script>
+
+</body>
+</html>

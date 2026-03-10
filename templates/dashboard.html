@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard | BMC Ticketing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboards/dashboard.css') }}">
+</head>
+<body>
+
+<!-- ── FLASH MESSAGE TOAST ── -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+    <div class="flash-toast flash-{{ category }}" id="flashToast">
+      <i class="fas fa-circle-check"></i>
+      <span>{{ message }}</span>
+    </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar collapsed" id="sidebar">
+    <button class="hamburger" id="toggleBtn" aria-label="Toggle menu">
+      <i class="fas fa-bars"></i>
+    </button>
+    <div class="logo-section">
+      <div class="logo-icon"><i class="fa-solid fa-ticket"></i></div>
+      <div class="logo-text">
+        <span class="logo-title">BMC</span>
+        <span class="logo-sub">Ticketing</span>
+      </div>
+    </div>
+    <nav class="nav-menu">
+      <span class="nav-label">Navigation</span>
+      <ul>
+        <li class="active">
+          <a href="{{ url_for('admin_dashboard') }}">
+            <span class="nav-icon"><i class="fas fa-house"></i></span>
+            <span class="nav-text">Dashboard</span>
+            <span class="active-dot"></span>
+          </a>
+        </li>
+        <li>
+          <a href="{{ url_for('admin_accounts') }}">
+            <span class="nav-icon"><i class="fas fa-users"></i></span>
+            <span class="nav-text">Accounts</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="admin-chip">
+        <div class="admin-avatar">{{ username[0]|upper if username else 'A' }}</div>
+        <div class="admin-info">
+          <span class="admin-name">{{ username if username else 'Admin' }}</span>
+          <span class="admin-role">Administrator</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <span class="nav-icon"><i class="fas fa-right-from-bracket"></i></span>
+        <span class="nav-text">Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <main class="main-content expanded">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title"><i class="fas fa-house"></i> Dashboard</h1>
+        <p class="page-sub">Welcome back, <strong>{{ username }}</strong> — here's what's happening today.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="online-badge">
+          <span class="dot"></span>
+          {{ username if username else 'Admin' }}
+        </div>
+        <button class="icon-btn" onclick="location.reload()" title="Refresh">
+          <i class="fas fa-rotate"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- ── STAT CARDS ── -->
+    <div class="stat-grid">
+      <div class="stat-card card-green">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fas fa-users"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">Total Users</span>
+            <h2 class="stat-value">{{ total_users }}</h2>
+            <p class="stat-note">Registered accounts</p>
+          </div>
+        </div>
+        <div class="stat-bg-icon"><i class="fas fa-users"></i></div>
+      </div>
+      <div class="stat-card card-mustard">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fas fa-building"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">Departments</span>
+            <h2 class="stat-value">{{ total_departments }}</h2>
+            <p class="stat-note">Active departments</p>
+          </div>
+        </div>
+        <div class="stat-bg-icon"><i class="fas fa-building"></i></div>
+      </div>
+      <div class="stat-card card-dark">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fas fa-clock"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">Date &amp; Time</span>
+            <h2 class="stat-value stat-time" id="realtime">--:--:--</h2>
+            <p class="stat-note" id="realtimeDate">Loading...</p>
+          </div>
+        </div>
+        <div class="stat-bg-icon"><i class="fas fa-clock"></i></div>
+      </div>
+      <div class="stat-card card-olive">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fas fa-ticket"></i></div>
+          <div class="stat-body">
+            <span class="stat-label">Total Tickets</span>
+            <h2 class="stat-value" id="ticketCount">0</h2>
+            <p class="stat-note">All time tickets</p>
+          </div>
+        </div>
+        <div class="stat-bg-icon"><i class="fas fa-ticket"></i></div>
+      </div>
+    </div>
+
+    <!-- ── RECENT ACTIVITY ── -->
+    <div class="section-header">
+      <div>
+        <h2 class="section-title"><i class="fas fa-clock-rotate-left"></i> Recent Activity</h2>
+        <p class="section-sub">Click any ticket row to view details and update its status.</p>
+      </div>
+      <div class="section-controls">
+
+        <!-- Filter Dropdown -->
+        <div class="filter-wrap" id="filterWrap">
+          <button class="filter-btn" id="filterBtn" type="button">
+            <i class="fas fa-filter"></i>
+            <span id="filterBtnLabel">Filter</span>
+            <i class="fas fa-chevron-down filter-chevron" id="filterChevron"></i>
+          </button>
+          <div class="filter-menu" id="filterMenu">
+            <div class="filter-item filter-item-active" data-filter="all">
+              <span class="fitem-icon fitem-icon-all"><i class="fas fa-list"></i></span>
+              <span class="fitem-label">All Status</span>
+              <i class="fas fa-check fitem-check" id="check-all"></i>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="filter-item" data-filter="Open">
+              <span class="fitem-dot fitem-dot-open"></span>
+              <span class="fitem-label">Open</span>
+              <i class="fas fa-check fitem-check" id="check-Open" style="opacity:0"></i>
+            </div>
+            <div class="filter-item" data-filter="Pending">
+              <span class="fitem-dot fitem-dot-pending"></span>
+              <span class="fitem-label">Pending</span>
+              <i class="fas fa-check fitem-check" id="check-Pending" style="opacity:0"></i>
+            </div>
+            <div class="filter-item" data-filter="Resolved">
+              <span class="fitem-dot fitem-dot-resolved"></span>
+              <span class="fitem-label">Resolved</span>
+              <i class="fas fa-check fitem-check" id="check-Resolved" style="opacity:0"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-wrap">
+          <i class="fas fa-magnifying-glass search-icon"></i>
+          <input type="text" id="ticketSearch" placeholder="Search tickets..." class="search-box">
+        </div>
+
+      </div>
+    </div>
+
+    {% if recent_tickets %}
+    <div class="table-wrap">
+      <table id="ticketsTable">
+        <thead>
+          <tr>
+            <th>#ID</th>
+            <th>User</th>
+            <th>Department</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Date &amp; Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ticket in recent_tickets %}
+          <tr class="ticket-row"
+              data-ticket-id="{{ ticket[0] }}"
+              data-user="{{ ticket[1] }}"
+              data-department="{{ ticket[2] }}"
+              data-subject="{{ ticket[3] }}"
+              data-description="{{ ticket[4] }}"
+              data-status="{{ ticket[5] }}"
+              data-created="{{ ticket[6] }}">
+            <td class="row-num">#{{ ticket[0] }}</td>
+            <td>
+              <div class="user-cell">
+                <div class="user-avatar">{{ ticket[1][0]|upper }}</div>
+                <span>{{ ticket[1] }}</span>
+              </div>
+            </td>
+            <td><span class="dept-tag">{{ ticket[2] }}</span></td>
+            <td class="subject-cell">{{ ticket[3] }}</td>
+            <td>
+              {% if ticket[5] == 'Open' %}
+                <span class="status-badge status-open"><i class="fas fa-circle-dot"></i> Open</span>
+              {% elif ticket[5] == 'Pending' %}
+                <span class="status-badge status-pending"><i class="fas fa-hourglass-half"></i> Pending</span>
+              {% elif ticket[5] == 'Resolved' %}
+                <span class="status-badge status-resolved"><i class="fas fa-circle-check"></i> Resolved</span>
+              {% else %}
+                <span class="status-badge">{{ ticket[5] }}</span>
+              {% endif %}
+            </td>
+            <td class="date-cell">{{ ticket[6] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="pagination">
+      <button class="page-btn" onclick="prevPage()"><i class="fas fa-chevron-left"></i> Prev</button>
+      <div class="page-nums" id="pageNums"></div>
+      <button class="page-btn" onclick="nextPage()">Next <i class="fas fa-chevron-right"></i></button>
+      <span class="page-info" id="pageInfo"></span>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="fas fa-ticket"></i>
+      <p>No tickets found yet.</p>
+    </div>
+    {% endif %}
+
+  </main>
+</div>
+
+
+<!-- ══════════════════════════════════
+     TICKET DETAIL MODAL  — LANDSCAPE
+══════════════════════════════════ -->
+<div id="ticketModal" class="modal-overlay">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3><i class="fas fa-ticket"></i> Ticket Details</h3>
+      <button class="modal-close" id="closeModal"><i class="fas fa-xmark"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <form action="{{ url_for('update_ticket_status') }}" method="POST" id="ticketForm">
+        <input type="hidden" name="ticket_id" id="modalTicketId">
+
+        <!-- LEFT: ticket info -->
+        <div class="modal-left">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-hashtag"></i> Ticket ID</span>
+              <span class="detail-value" id="modalTicketIdDisplay"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-user"></i> User</span>
+              <span class="detail-value" id="modalUser"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-building"></i> Department</span>
+              <span class="detail-value" id="modalDepartment"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label"><i class="fas fa-calendar"></i> Created At</span>
+              <span class="detail-value" id="modalCreated"></span>
+            </div>
+            <div class="detail-item detail-full">
+              <span class="detail-label"><i class="fas fa-tag"></i> Subject</span>
+              <span class="detail-value" id="modalSubject"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label><i class="fas fa-align-left"></i> Description</label>
+            <textarea id="modalDescription" rows="5" readonly></textarea>
+          </div>
+        </div>
+
+        <!-- RIGHT: status selector -->
+        <div class="modal-right">
+          <div class="status-panel">
+            <p class="status-panel-title"><i class="fas fa-flag"></i> Update Status</p>
+            <p class="status-panel-sub">Choose the current state of this ticket.</p>
+            <input type="hidden" name="status" id="modalStatus" value="Open">
+            <div class="status-cards">
+              <div class="status-card sc-open" data-value="Open">
+                <span class="sc-icon"><i class="fas fa-circle-dot"></i></span>
+                <div class="sc-text">
+                  <span class="sc-label">Open</span>
+                  <span class="sc-desc">Awaiting action</span>
+                </div>
+                <span class="sc-radio"></span>
+              </div>
+              <div class="status-card sc-pending" data-value="Pending">
+                <span class="sc-icon"><i class="fas fa-hourglass-half"></i></span>
+                <div class="sc-text">
+                  <span class="sc-label">Pending</span>
+                  <span class="sc-desc">Being reviewed</span>
+                </div>
+                <span class="sc-radio"></span>
+              </div>
+              <div class="status-card sc-resolved" data-value="Resolved">
+                <span class="sc-icon"><i class="fas fa-circle-check"></i></span>
+                <div class="sc-text">
+                  <span class="sc-label">Resolved</span>
+                  <span class="sc-desc">Ticket closed</span>
+                </div>
+                <span class="sc-radio"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+      <button class="btn btn-primary" onclick="document.getElementById('ticketForm').submit()">
+        <i class="fas fa-floppy-disk"></i> Update Status
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ── NOTIFICATION BANNER ── -->
+<div class="notif-banner" id="notifBanner">
+  <i class="fas fa-bell"></i>
+  <span id="notifText">New ticket received!</span>
+  <button onclick="document.getElementById('notifBanner').classList.remove('show')">
+    <i class="fas fa-xmark"></i>
+  </button>
+</div>
+
+<audio id="notifSound" src="{{ url_for('static', filename='catlaugh.mp3') }}"></audio>
+
+
+<script>
+/* ── SIDEBAR ── */
+const toggleBtn   = document.getElementById("toggleBtn");
+const sidebar     = document.getElementById("sidebar");
+const mainContent = document.querySelector(".main-content");
+toggleBtn.addEventListener("click", () => {
+  const isCollapsed = sidebar.classList.toggle("collapsed");
+  mainContent.classList.toggle("expanded", isCollapsed);
+  const icon = toggleBtn.querySelector("i");
+  icon.style.transition = "transform 0.3s ease, opacity 0.2s ease";
+  icon.style.opacity = "0";
+  setTimeout(() => {
+    icon.className = isCollapsed ? "fas fa-bars" : "fas fa-angles-left";
+    icon.style.opacity = "1";
+  }, 150);
+});
+
+/* ── CLOCK ── */
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ampm = h >= 12 ? 'PM' : 'AM'; h = h % 12 || 12;
+  document.getElementById("realtime").textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')} ${ampm}`;
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById("realtimeDate").textContent =
+    `${days[now.getDay()]}, ${months[now.getMonth()]} ${now.getDate()}, ${now.getFullYear()}`;
+}
+setInterval(updateClock, 1000); updateClock();
+
+/* ── COUNT ANIMATION ── */
+function animateCount(id, target) {
+  const el = document.getElementById(id); if (!el) return;
+  let n = 0; const step = Math.max(1, Math.ceil(target / 50));
+  const t = setInterval(() => { n = Math.min(n+step, target); el.textContent = n; if (n>=target) clearInterval(t); }, 20);
+}
+
+/* ── FLASH TOAST ── */
+document.addEventListener("DOMContentLoaded", () => {
+  const flash = document.getElementById("flashToast");
+  if (flash) { flash.classList.add("show"); setTimeout(() => flash.classList.remove("show"), 3000); }
+});
+
+/* ════════════════
+   MODAL
+════════════════ */
+const modal = document.getElementById("ticketModal");
+
+function setStatusCard(value) {
+  document.getElementById("modalStatus").value = value;
+  document.querySelectorAll(".status-card").forEach(c =>
+    c.classList.toggle("sc-selected", c.dataset.value === value)
+  );
+}
+
+function openModal(row) {
+  const tid = row.dataset.ticketId;
+  document.getElementById("modalTicketId").value           = tid;
+  document.getElementById("modalTicketIdDisplay").textContent = "#" + tid;
+  document.getElementById("modalUser").textContent         = row.dataset.user;
+  document.getElementById("modalDepartment").textContent   = row.dataset.department;
+  document.getElementById("modalSubject").textContent      = row.dataset.subject;
+  document.getElementById("modalCreated").textContent      = row.dataset.created;
+  document.getElementById("modalDescription").value        = row.dataset.description;
+  setStatusCard(row.dataset.status || "Open");
+  modal.classList.add("active");
+}
+function closeModal() { modal.classList.remove("active"); }
+
+document.querySelectorAll(".ticket-row").forEach(r => r.addEventListener("click", () => openModal(r)));
+document.getElementById("closeModal").onclick = closeModal;
+document.getElementById("cancelBtn").onclick  = closeModal;
+modal.addEventListener("click", e => { if (e.target === modal) closeModal(); });
+document.querySelectorAll(".status-card").forEach(c =>
+  c.addEventListener("click", () => setStatusCard(c.dataset.value))
+);
+
+/* ════════════════
+   FILTER DROPDOWN
+════════════════ */
+let activeFilter = "all";
+const filterBtn      = document.getElementById("filterBtn");
+const filterMenu     = document.getElementById("filterMenu");
+const filterChevron  = document.getElementById("filterChevron");
+const filterBtnLabel = document.getElementById("filterBtnLabel");
+
+function openFilterMenu() { filterMenu.classList.add("open"); filterChevron.style.transform = "rotate(180deg)"; }
+function closeFilterMenu() { filterMenu.classList.remove("open"); filterChevron.style.transform = "rotate(0deg)"; }
+
+filterBtn.addEventListener("click", e => {
+  e.stopPropagation();
+  filterMenu.classList.contains("open") ? closeFilterMenu() : openFilterMenu();
+});
+
+const filterLabels = { all: "Filter", Open: "Open", Pending: "Pending", Resolved: "Resolved" };
+document.querySelectorAll(".filter-item").forEach(item => {
+  item.addEventListener("click", () => {
+    activeFilter = item.dataset.filter;
+    filterBtnLabel.textContent = filterLabels[activeFilter] || "Filter";
+
+    document.querySelectorAll(".filter-item").forEach(i => i.classList.remove("filter-item-active"));
+    item.classList.add("filter-item-active");
+
+    ["all","Open","Pending","Resolved"].forEach(k => {
+      const el = document.getElementById("check-" + k);
+      if (el) el.style.opacity = k === activeFilter ? "1" : "0";
+    });
+
+    filterBtn.className = "filter-btn";
+    if (activeFilter === "Open")     filterBtn.classList.add("fb-open");
+    if (activeFilter === "Pending")  filterBtn.classList.add("fb-pending");
+    if (activeFilter === "Resolved") filterBtn.classList.add("fb-resolved");
+
+    closeFilterMenu();
+    applyFilters();
+  });
+});
+document.addEventListener("click", e => { if (!e.target.closest("#filterWrap")) closeFilterMenu(); });
+
+/* ════════════════
+   SEARCH + FILTER
+════════════════ */
+const allRows = Array.from(document.querySelectorAll("#ticketsTable tbody tr"));
+
+function applyFilters() {
+  const q = document.getElementById("ticketSearch").value.toLowerCase().trim();
+  allRows.forEach(r => {
+    const ms = r.innerText.toLowerCase().includes(q);
+    const mf = activeFilter === "all" || r.dataset.status === activeFilter;
+    r.dataset.hidden = (ms && mf) ? "" : "true";
+  });
+  showPage(1);
+}
+document.getElementById("ticketSearch").addEventListener("keyup", applyFilters);
+
+/* ════════════════
+   PAGINATION
+════════════════ */
+const rowsPerPage = 10;
+let currentPage = 1;
+
+function getActive() { return allRows.filter(r => r.dataset.hidden !== "true"); }
+
+function showPage(page) {
+  const active = getActive();
+  const total  = Math.max(1, Math.ceil(active.length / rowsPerPage));
+  currentPage  = Math.min(Math.max(1, page), total);
+  const start  = (currentPage - 1) * rowsPerPage;
+  allRows.forEach(r => (r.style.display = "none"));
+  active.slice(start, start + rowsPerPage).forEach(r => (r.style.display = ""));
+  renderPager(total);
+  const end = Math.min(start + rowsPerPage, active.length);
+  document.getElementById("pageInfo").textContent =
+    active.length ? `Showing ${start+1}–${end} of ${active.length}` : "No results";
+}
+
+function renderPager(total) {
+  const wrap = document.getElementById("pageNums"); wrap.innerHTML = "";
+  for (let i = 1; i <= total; i++) {
+    const b = document.createElement("button");
+    b.className = "page-num" + (i === currentPage ? " active" : "");
+    b.textContent = i; b.onclick = () => showPage(i); wrap.appendChild(b);
+  }
+}
+function prevPage() { showPage(currentPage - 1); }
+function nextPage() { showPage(currentPage + 1); }
+
+document.addEventListener("DOMContentLoaded", () => {
+  animateCount("ticketCount", allRows.length);
+  showPage(1);
+});
+
+/* ════════════════
+   POLLING
+════════════════ */
+const knownIds = new Set(allRows.map(r => r.dataset.ticketId).filter(Boolean));
+
+function checkTickets() {
+  fetch("/check_new_tickets")
+    .then(r => r.json())
+    .then(data => {
+      const brandNew = (data.newTickets || []).filter(t => !knownIds.has(String(t.id)));
+      if (!brandNew.length) return;
+
+      document.getElementById("notifSound").play().catch(() => {});
+      const banner = document.getElementById("notifBanner");
+      document.getElementById("notifText").textContent =
+        `${brandNew.length} new ticket${brandNew.length > 1 ? 's' : ''} received!`;
+      banner.classList.add("show");
+      clearTimeout(banner._timer);
+      banner._timer = setTimeout(() => banner.classList.remove("show"), 5000);
+
+      const tbody = document.querySelector("#ticketsTable tbody");
+      brandNew.forEach(ticket => {
+        knownIds.add(String(ticket.id));
+        const row = document.createElement("tr");
+        row.classList.add("ticket-row", "row-new");
+        row.dataset.ticketId = ticket.id; row.dataset.user = ticket.user;
+        row.dataset.department = ticket.department; row.dataset.subject = ticket.subject;
+        row.dataset.description = ticket.description; row.dataset.status = ticket.status;
+        row.dataset.created = ticket.created;
+        const sc = ticket.status==='Open'?'status-open':ticket.status==='Pending'?'status-pending':'status-resolved';
+        const si = ticket.status==='Open'?'fa-circle-dot':ticket.status==='Pending'?'fa-hourglass-half':'fa-circle-check';
+        row.innerHTML = `
+          <td class="row-num">#${ticket.id}</td>
+          <td><div class="user-cell"><div class="user-avatar">${ticket.user[0].toUpperCase()}</div><span>${ticket.user}</span></div></td>
+          <td><span class="dept-tag">${ticket.department}</span></td>
+          <td class="subject-cell">${ticket.subject}</td>
+          <td><span class="status-badge ${sc}"><i class="fas ${si}"></i> ${ticket.status}</span></td>
+          <td class="date-cell">${ticket.created}</td>`;
+        row.addEventListener("click", () => openModal(row));
+        allRows.unshift(row); tbody.prepend(row);
+        setTimeout(() => row.classList.remove("row-new"), 2500);
+      });
+      animateCount("ticketCount", allRows.length);
+      applyFilters();
+    })
+    .catch(err => console.error("Poll error:", err));
+}
+setInterval(checkTickets, 5000);
+</script>
+
+</body>
+</html>

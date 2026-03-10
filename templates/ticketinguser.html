@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Tickets — BMC Ticketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ticketinguser/ticketinguser.css') }}">
+</head>
+<body>
+
+  <!-- ── TOP NAV ── -->
+  <nav class="dashboard-nav">
+
+    <!-- Left: Brand -->
+    <div class="nav-brand">
+      <div class="nav-brand-icon">
+        <i class="fa-solid fa-ticket"></i>
+      </div>
+      <div class="nav-brand-text">
+        <span class="nav-brand-title">BMC Ticketing</span>
+        <span class="nav-brand-sub">Support Portal</span>
+      </div>
+    </div>
+
+    <!-- Right: Links + User -->
+    <div class="nav-links">
+
+      <!-- Username chip -->
+      <div class="nav-user-chip">
+        <div class="nav-avatar">{{ username[0]|upper }}</div>
+        <span class="nav-username">{{ username }}</span>
+      </div>
+
+      <a href="{{ url_for('ticket_user.user_ticket_dashboard') }}" class="nav-link active">
+        <i class="fa-solid fa-house"></i>
+        <span>Dashboard</span>
+      </a>
+
+      <a href="{{ url_for('logout') }}" class="nav-link nav-logout">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Logout</span>
+      </a>
+
+    </div>
+  </nav>
+
+  <!-- ── PAGE CONTENT ── -->
+  <div class="dashboard-container">
+
+    <!-- Welcome heading -->
+    <h2>
+      <i class="fa-solid fa-wave-square"></i>
+      Welcome back, {{ username }}!
+    </h2>
+
+    <!-- Info banner -->
+    <div class="dashboard-info">
+      <p>This is your personal support portal. You can view all your tickets and track their current status below.</p>
+    </div>
+
+    <!-- Tickets table -->
+    {% if tickets %}
+    <div class="content-box">
+      <h3>
+        <i class="fa-solid fa-list-check"></i>
+        My Tickets
+      </h3>
+
+      <div class="ticket-table-wrap">
+        <table class="ticket-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Subject</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in tickets %}
+            <tr>
+              <td>{{ t[0] }}</td>
+              <td>{{ t[1] }}</td>
+              <td>{{ t[2] }}</td>
+              <td>
+                {% set s = t[3]|lower %}
+                <span class="status-badge status-{{ s }}">{{ t[3] }}</span>
+              </td>
+              <td>{{ t[4] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {% else %}
+
+    <div class="dashboard-info empty">
+      <p>You have no tickets yet. When you submit a support request, it will appear here.</p>
+    </div>
+
+    {% endif %}
+
+  </div>
+
+</body>
+</html>

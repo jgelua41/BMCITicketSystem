@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ticket History — BMC Ticketing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/history/history.css') }}">
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══════════════════════════════════
+       SIDEBAR  (starts OPEN — no .collapsed on page load)
+  ══════════════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+
+    <button class="hamburger" id="hamburgerBtn" aria-label="Toggle sidebar">
+      <i class="fa-solid fa-bars" id="hamburgerIcon"></i>
+    </button>
+
+    <div class="logo-section">
+      <div class="logo-icon"><i class="fa-solid fa-ticket"></i></div>
+      <div class="logo-text">
+        <span class="logo-title">BMC Ticketing</span>
+        <span class="logo-sub">Support Portal</span>
+      </div>
+    </div>
+
+    <nav class="nav-menu">
+      <span class="nav-label">Menu</span>
+      <ul>
+        <li>
+          <a href="{{ url_for('user_dashboard') }}">
+            <div class="nav-icon"><i class="fa-solid fa-house"></i></div>
+            <span class="nav-text">Home</span>
+          </a>
+        </li>
+        <li class="active">
+          <a href="{{ url_for('user_history') }}">
+            <div class="nav-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+            <span class="nav-text">History</span>
+            <span class="active-dot"></span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-chip">
+        <div class="admin-avatar">{{ username[0]|upper }}</div>
+        <div class="admin-info">
+          <span class="admin-name">{{ username }}</span>
+          <span class="admin-role">User</span>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">
+        <div class="nav-icon"><i class="fa-solid fa-right-from-bracket"></i></div>
+        <span class="nav-text">Logout</span>
+      </a>
+    </div>
+
+  </aside>
+
+  <!-- ══════════════════════════════════
+       MAIN CONTENT
+  ══════════════════════════════════ -->
+  <div class="main-content" id="mainContent">
+
+    <!-- ── Topbar ── -->
+    <div class="topbar">
+      <div>
+        <p class="page-title">
+          <i class="fa-solid fa-clock-rotate-left"></i>
+          Ticket History
+        </p>
+        <p class="page-sub">Welcome back, <strong>{{ username }}</strong> — here are all your submitted tickets.</p>
+      </div>
+      <div class="topbar-right">
+        <!-- Live clock -->
+        <div class="clock-badge">
+          <i class="fa-regular fa-clock"></i>
+          <span id="liveClock">--:--:--</span>
+        </div>
+        <!-- Online dot -->
+        <div class="online-badge">
+          <span class="dot"></span>
+          Online
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stat Cards ── -->
+    <div class="stat-grid">
+
+      <div class="stat-card card-green">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-ticket"></i></div>
+          <div>
+            <span class="stat-label">Total Tickets</span>
+            <div class="stat-value" id="statTotal">0</div>
+            <div class="stat-note">All time submissions</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-ticket stat-bg-icon"></i>
+      </div>
+
+      <div class="stat-card card-green" style="background:linear-gradient(135deg,#256320,#3d9930)">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-circle-dot"></i></div>
+          <div>
+            <span class="stat-label">Open</span>
+            <div class="stat-value" id="statOpen">0</div>
+            <div class="stat-note">Awaiting response</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-circle-dot stat-bg-icon"></i>
+      </div>
+
+      <div class="stat-card card-mustard">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+          <div>
+            <span class="stat-label">Pending</span>
+            <div class="stat-value" id="statPending">0</div>
+            <div class="stat-note">In progress</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-hourglass-half stat-bg-icon"></i>
+      </div>
+
+      <div class="stat-card card-blue">
+        <div class="stat-inner">
+          <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+          <div>
+            <span class="stat-label">Resolved</span>
+            <div class="stat-value" id="statResolved">0</div>
+            <div class="stat-note">Closed &amp; solved</div>
+          </div>
+        </div>
+        <i class="fa-solid fa-circle-check stat-bg-icon"></i>
+      </div>
+
+    </div>
+
+    <!-- ── Section header ── -->
+    <div class="section-header">
+      <div>
+        <p class="section-title">
+          <i class="fa-solid fa-list-check"></i>
+          My Tickets
+        </p>
+        <p class="section-sub">A full log of every support request you have submitted.</p>
+      </div>
+
+      {% if tickets %}
+      <div class="section-controls">
+
+        <!-- Filter dropdown -->
+        <div class="filter-wrap">
+          <button class="filter-btn" id="filterBtn">
+            <i class="fa-solid fa-filter"></i>
+            <span id="filterLabel">All Status</span>
+            <i class="fa-solid fa-chevron-down filter-chevron" id="filterChevron"></i>
+          </button>
+          <div class="filter-menu" id="filterMenu">
+            <div class="filter-item filter-item-active" data-value="all">
+              <div class="fitem-icon fitem-icon-all"><i class="fa-solid fa-border-all"></i></div>
+              <span class="fitem-label">All Status</span>
+              <i class="fa-solid fa-check fitem-check" id="fcheck-all"></i>
+            </div>
+            <div class="filter-divider"></div>
+            <div class="filter-item" data-value="open">
+              <div class="fitem-icon"><span class="fitem-dot fitem-dot-open"></span></div>
+              <span class="fitem-label">Open</span>
+              <i class="fa-solid fa-check fitem-check" id="fcheck-open" style="display:none"></i>
+            </div>
+            <div class="filter-item" data-value="pending">
+              <div class="fitem-icon"><span class="fitem-dot fitem-dot-pending"></span></div>
+              <span class="fitem-label">Pending</span>
+              <i class="fa-solid fa-check fitem-check" id="fcheck-pending" style="display:none"></i>
+            </div>
+            <div class="filter-item" data-value="resolved">
+              <div class="fitem-icon"><span class="fitem-dot fitem-dot-resolved"></span></div>
+              <span class="fitem-label">Resolved</span>
+              <i class="fa-solid fa-check fitem-check" id="fcheck-resolved" style="display:none"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search -->
+        <div class="search-wrap">
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-box"
+            placeholder="Search department, subject…"
+            autocomplete="off"
+          >
+        </div>
+
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- ── Table ── -->
+    {% if tickets %}
+    <div class="table-wrap">
+      <table id="historyTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Department</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Date &amp; Time</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          {% for ticket in tickets %}
+          <tr
+            data-status="{{ ticket[5]|lower }}"
+            data-dept="{{ ticket[2]|lower }}"
+            data-subject="{{ ticket[3]|lower }}"
+          >
+            <td class="row-num">{{ ticket[0] }}</td>
+            <td><span class="dept-tag">{{ ticket[2] }}</span></td>
+            <td><span class="subject-cell" title="{{ ticket[3] }}">{{ ticket[3] }}</span></td>
+            <td>
+              {% set s = ticket[5]|lower %}
+              <span class="status-badge status-{{ s }}">
+                {% if s == 'open' %}<i class="fa-solid fa-circle-dot"></i>
+                {% elif s == 'pending' %}<i class="fa-solid fa-hourglass-half"></i>
+                {% elif s == 'resolved' %}<i class="fa-solid fa-circle-check"></i>
+                {% else %}<i class="fa-solid fa-circle-minus"></i>{% endif %}
+                {{ ticket[5] }}
+              </span>
+            </td>
+            <td class="date-cell">{{ ticket[6] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination" id="pagination">
+      <button class="page-btn" id="prevBtn"><i class="fa-solid fa-chevron-left"></i> Prev</button>
+      <div class="page-nums" id="pageNums"></div>
+      <button class="page-btn" id="nextBtn">Next <i class="fa-solid fa-chevron-right"></i></button>
+      <span class="page-info" id="pageInfo"></span>
+    </div>
+
+    {% else %}
+    <div class="table-wrap">
+      <div class="empty-state">
+        <i class="fa-solid fa-inbox"></i>
+        <p>You have not submitted any tickets yet.</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div><!-- .main-content -->
+</div><!-- .layout -->
+
+<!-- ══════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════ -->
+<script>
+/* ═══════════════════════════════════════
+   1. SIDEBAR — starts COLLAPSED, hamburger toggles open/close
+      Icon: fa-bars (closed) → fa-angles-left (open)
+═══════════════════════════════════════ */
+const sidebar       = document.getElementById('sidebar');
+const mainContent   = document.getElementById('mainContent');
+const hamburgerBtn  = document.getElementById('hamburgerBtn');
+const hamburgerIcon = document.getElementById('hamburgerIcon');
+
+// Page loads with sidebar collapsed
+sidebar.classList.add('collapsed');
+mainContent.classList.add('expanded');
+hamburgerIcon.className = 'fa-solid fa-bars';
+
+hamburgerBtn.addEventListener('click', () => {
+  const nowCollapsed = sidebar.classList.toggle('collapsed');
+  mainContent.classList.toggle('expanded', nowCollapsed);
+  // bars = closed/collapsed  |  angles-left = open/expanded
+  hamburgerIcon.className = nowCollapsed
+    ? 'fa-solid fa-bars'
+    : 'fa-solid fa-angles-left';
+});
+
+/* ═══════════════════════════════════════
+   2. LIVE CLOCK — 12-hour with AM/PM
+═══════════════════════════════════════ */
+function updateClock() {
+  const now    = new Date();
+  let   hours  = now.getHours();
+  const ampm   = hours >= 12 ? 'PM' : 'AM';
+  hours        = hours % 12 || 12;
+  const hh     = String(hours).padStart(2, '0');
+  const mm     = String(now.getMinutes()).padStart(2, '0');
+  const ss     = String(now.getSeconds()).padStart(2, '0');
+  const el     = document.getElementById('liveClock');
+  if (el) el.textContent = `${hh}:${mm}:${ss} ${ampm}`;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+/* ═══════════════════════════════════════
+   3. STAT CARDS — count from table rows
+═══════════════════════════════════════ */
+(function buildStats() {
+  const rows    = document.querySelectorAll('#historyTable tbody tr');
+  let open = 0, pending = 0, resolved = 0;
+
+  rows.forEach(r => {
+    const s = (r.dataset.status || '').trim();
+    if (s === 'open')     open++;
+    else if (s === 'pending')  pending++;
+    else if (s === 'resolved') resolved++;
+  });
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('statTotal',    rows.length);
+  set('statOpen',     open);
+  set('statPending',  pending);
+  set('statResolved', resolved);
+})();
+
+/* ═══════════════════════════════════════
+   4. FILTER + SEARCH + PAGINATION
+═══════════════════════════════════════ */
+const ROWS_PER_PAGE = 10;
+
+const allRows      = Array.from(document.querySelectorAll('#historyTable tbody tr'));
+const searchInput  = document.getElementById('searchInput');
+const filterBtn    = document.getElementById('filterBtn');
+const filterMenu   = document.getElementById('filterMenu');
+const filterLabel  = document.getElementById('filterLabel');
+const filterChevron = document.getElementById('filterChevron');
+const prevBtn      = document.getElementById('prevBtn');
+const nextBtn      = document.getElementById('nextBtn');
+const pageNums     = document.getElementById('pageNums');
+const pageInfo     = document.getElementById('pageInfo');
+
+let currentFilter  = 'all';
+let currentSearch  = '';
+let currentPage    = 1;
+
+/* ── Filter dropdown open/close ── */
+if (filterBtn) {
+  filterBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = filterMenu.classList.toggle('open');
+    filterChevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+  });
+
+  document.addEventListener('click', () => {
+    filterMenu.classList.remove('open');
+    filterChevron.style.transform = '';
+  });
+
+  filterMenu.addEventListener('click', (e) => e.stopPropagation());
+
+  /* ── Filter item click ── */
+  document.querySelectorAll('.filter-item').forEach(item => {
+    item.addEventListener('click', () => {
+      currentFilter = item.dataset.value;
+      currentPage   = 1;
+
+      // Update label + button colour class
+      filterLabel.textContent = item.querySelector('.fitem-label').textContent;
+      filterBtn.className = 'filter-btn';
+      if (currentFilter === 'open')     filterBtn.classList.add('fb-open');
+      if (currentFilter === 'pending')  filterBtn.classList.add('fb-pending');
+      if (currentFilter === 'resolved') filterBtn.classList.add('fb-resolved');
+
+      // Show/hide checkmarks
+      ['all','open','pending','resolved'].forEach(v => {
+        const el = document.getElementById('fcheck-' + v);
+        if (el) el.style.display = (v === currentFilter) ? '' : 'none';
+      });
+
+      // Highlight active item
+      document.querySelectorAll('.filter-item').forEach(i => i.classList.remove('filter-item-active'));
+      item.classList.add('filter-item-active');
+
+      // Close menu
+      filterMenu.classList.remove('open');
+      filterChevron.style.transform = '';
+
+      applyFilters();
+    });
+  });
+}
+
+/* ── Search input ── */
+if (searchInput) {
+  searchInput.addEventListener('input', () => {
+    currentSearch = searchInput.value.toLowerCase().trim();
+    currentPage   = 1;
+    applyFilters();
+  });
+}
+
+/* ── Core: filter rows then paginate ── */
+function applyFilters() {
+  const visible = allRows.filter(row => {
+    const status  = row.dataset.status  || '';
+    const dept    = row.dataset.dept    || '';
+    const subject = row.dataset.subject || '';
+
+    const matchFilter = currentFilter === 'all' || status === currentFilter;
+    const matchSearch = !currentSearch
+      || dept.includes(currentSearch)
+      || subject.includes(currentSearch)
+      || status.includes(currentSearch);
+
+    return matchFilter && matchSearch;
+  });
+
+  renderPage(visible);
+}
+
+function renderPage(visible) {
+  const total      = visible.length;
+  const totalPages = Math.max(1, Math.ceil(total / ROWS_PER_PAGE));
+  if (currentPage > totalPages) currentPage = totalPages;
+
+  const start = (currentPage - 1) * ROWS_PER_PAGE;
+  const end   = start + ROWS_PER_PAGE;
+
+  // Hide all rows first
+  allRows.forEach(r => r.style.display = 'none');
+
+  // Remove old no-results row
+  const existing = document.querySelector('.no-results-row');
+  if (existing) existing.remove();
+
+  if (total === 0) {
+    const tbody = document.getElementById('tableBody');
+    const tr    = document.createElement('tr');
+    tr.className = 'no-results-row';
+    tr.innerHTML = `<td colspan="5">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      No tickets match your current filter or search.
+    </td>`;
+    tbody.appendChild(tr);
+  } else {
+    visible.slice(start, end).forEach(r => r.style.display = '');
+  }
+
+  buildPagination(total, totalPages);
+}
+
+function buildPagination(total, totalPages) {
+  if (!pageNums) return;
+
+  // Prev / Next
+  prevBtn.disabled = currentPage <= 1;
+  nextBtn.disabled = currentPage >= totalPages;
+
+  // Page number buttons
+  pageNums.innerHTML = '';
+  const range = pageRange(currentPage, totalPages);
+  range.forEach(p => {
+    const btn = document.createElement('button');
+    btn.className = 'page-num' + (p === currentPage ? ' active' : '');
+    btn.textContent = p;
+    btn.addEventListener('click', () => {
+      currentPage = p;
+      applyFilters();
+    });
+    pageNums.appendChild(btn);
+  });
+
+  // Info text
+  const start = total === 0 ? 0 : (currentPage - 1) * ROWS_PER_PAGE + 1;
+  const end   = Math.min(currentPage * ROWS_PER_PAGE, total);
+  if (pageInfo) pageInfo.textContent = `Showing ${start}–${end} of ${total} ticket${total !== 1 ? 's' : ''}`;
+}
+
+/* Returns a compact array of page numbers with ellipsis gaps */
+function pageRange(current, total) {
+  if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+  const pages = new Set([1, total, current]);
+  if (current > 1) pages.add(current - 1);
+  if (current < total) pages.add(current + 1);
+  return [...pages].sort((a, b) => a - b);
+}
+
+/* Prev / Next buttons */
+if (prevBtn) prevBtn.addEventListener('click', () => { if (currentPage > 1) { currentPage--; applyFilters(); } });
+if (nextBtn) nextBtn.addEventListener('click', () => { currentPage++; applyFilters(); });
+
+/* Initial render */
+applyFilters();
+</script>
+
+</body>
+</html>
